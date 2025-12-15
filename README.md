@@ -12,6 +12,12 @@ La app incluye:
 
 ## Screenshots
 
+<img width="250" height="auto" alt="kufta_percha1" src="https://github.com/user-attachments/assets/79879736-d5c7-4a85-8186-e39119e4a75d" />
+<img width="250" height="auto" alt="kufta_percha2" src="https://github.com/user-attachments/assets/a2fbe3a0-9d40-4836-a6e9-60eed9605530" />
+<img width="250" height="auto" alt="kufta_percha3" src="https://github.com/user-attachments/assets/179b8c19-baab-4036-a8c8-d9a7f716999c" />
+
+
+
 
 ---
 
@@ -29,4 +35,14 @@ La app incluye:
 
 1. Clona este repositorio:  
 ```bash
-git clone https://github.com/
+git clone https://github.com/andycdev/kufta-percha.git
+```
+2. Trae las dependecias del proyecto:  
+```bash
+flutter pub get
+```
+3. ¡Corre la aplicación!
+```bash
+flutter run
+```
+
