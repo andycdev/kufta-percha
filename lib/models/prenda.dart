@@ -16,7 +16,7 @@
       required this.imagen,
       required this.nombre,
       required this.descripcion,
-      required this.color,
+      required this.color, 
       required this.etiquetas,
       required this.estrellas,
       required this.vecesUsada,

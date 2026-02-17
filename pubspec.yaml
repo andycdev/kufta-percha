@@ -1,7 +1,7 @@
 name: kufta_percha
 description: "Nueva era de organización de percha."
-publish_to: 'none' 
-version: 1.0.0+1
+publish_to: "none"
+version: 1.1.0+2
 
 environment:
   sdk: ^3.10.3
@@ -17,7 +17,13 @@ dependencies:
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
   flutter_local_notifications: ^19.5.0
-  
+
+  # Splash screen native
+  flutter_native_splash: ^2.4.7
+  # Iconos recientes de google fonts
+  material_symbols_icons: ^4.2906.0
+  # Assets de lottie files
+  lottie: ^3.3.2
 
 
   flutter_localizations:
@@ -29,19 +35,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
- 
-
 
 flutter:
   uses-material-design: true
   assets:
     - assets/fonts/
     - assets/img/
+    - assets/gifts/
 
   fonts:
-    - family: ComicNeue
+    - family: Fredoka
       fonts:
-        - asset: assets/fonts/ComicNeue-Regular.ttf
-        - asset: assets/fonts/ComicNeue-Bold.ttf
-          weight: 700
- 
+        - asset: assets/fonts/Fredoka.ttf

@@ -30,7 +30,7 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "kufta_alias"
+            keyAlias = "kufta"
             keyPassword = "4ndr3ch0"
             storeFile = file("kufta-key.jks")  // Asegúrate de que el keystore esté en la carpeta correcta
             storePassword = "4ndr3ch0"

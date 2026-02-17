@@ -5,6 +5,7 @@ class Pinta {
   final File zapatos;
   final String nombre;
 
+  final File? chaqueta;
   final File? gorro;
   final String? descripcion;
   final String? categoria;
@@ -18,6 +19,7 @@ class Pinta {
     required this.abajo,
     required this.zapatos,
     required this.nombre,
+    this.chaqueta,
     this.gorro,
     this.descripcion,
     this.categoria,
@@ -30,6 +32,7 @@ class Pinta {
     'abajo': abajo.path,
     'zapatos': zapatos.path,
     'nombre': nombre,
+    'chaqueta': chaqueta?.path,
     'gorro': gorro?.path,
     'descripcion': descripcion,
     'categoria': categoria,
@@ -44,6 +47,7 @@ class Pinta {
     abajo: File(map['abajo']),
     zapatos: File(map['zapatos']),
     nombre: map['nombre'],
+    chaqueta: map['chaqueta'] != null ? File(map['chaqueta']) : null,
     gorro: map['gorro'] != null ? File(map['gorro']) : null,
     descripcion: map['descripcion'],
     categoria: map['categoria'],

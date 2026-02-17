@@ -7,52 +7,500 @@ import 'package:intl/intl.dart';
 import 'package:kufta_percha/models/categories.dart';
 import 'package:kufta_percha/models/pinta.dart';
 import 'package:kufta_percha/models/prenda.dart';
-import 'package:kufta_percha/utils/notificaction.dart';
 import 'package:kufta_percha/utils/responsive.dart';
 import 'dart:io';
 
-class Create extends StatelessWidget {
+import 'package:material_symbols_icons/symbols.dart';
+
+class Create extends StatefulWidget {
   final Pinta? existingPinta;
   final int? index;
-  const Create({super.key, this.existingPinta, this.index});
+  const Create({super.key, this.index, this.existingPinta});
+
+  @override
+  State<Create> createState() => _CreateState();
+}
+
+class _CreateState extends State<Create> {
+  final Map<String, File?> images = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.existingPinta != null) {
+      final p = widget.existingPinta!;
+
+      images["arriba"] = p.arriba;
+      images["abajo"] = p.abajo;
+      images["tillas"] = p.zapatos;
+
+      if (p.gorro != null) images["gorro"] = p.gorro!;
+      if (p.chaqueta != null) images["chaqueta"] = p.chaqueta!;
+    }
+  }
+
+  void _updateImage(String tipo, File? file) {
+    setState(() {
+      images[tipo] = file;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final r = Responsive.of(context);
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: r.hp(1)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: r.wp(2)),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(CupertinoIcons.chevron_back, size: r.dp(3)),
-                      SizedBox(width: r.wp(2)),
-                      Text(
-                        existingPinta != null
-                            ? "¿Qué le vamos a cambiar?"
-                            : "Piensela pues..",
-                        style: TextStyle(
-                          letterSpacing: 0,
-                          fontWeight: FontWeight.bold,
-                          fontSize: r.dp(3),
-                        ),
-                      ),
-                    ],
+      body: CustomScrollView(
+        slivers: [
+          StartSliverCreate(r: r, existingPinta: widget.existingPinta),
+          RowWithClothesSliver(
+            r: r,
+            images: images,
+            onImageSelected: _updateImage,
+          ),
+          SliverBoxWithPinta(images: images, r: r),
+          AboutSliver(
+            r: r,
+            images: images,
+            index: widget.index,
+            existingPinta: widget.existingPinta,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StartSliverCreate extends StatelessWidget {
+  final Pinta? existingPinta;
+  const StartSliverCreate({
+    super.key,
+    required this.r,
+    required this.existingPinta,
+  });
+
+  final Responsive r;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: r.hp(4),
+          bottom: r.hp(2),
+          left: r.wp(5),
+          right: r.wp(5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            IconButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? const Color.fromARGB(255, 225, 225, 225)
+                      : Theme.of(context).colorScheme.primary.withAlpha(200),
+                ),
+                foregroundColor: WidgetStatePropertyAll(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white,
+                ),
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(r.dp(2)),
                   ),
                 ),
               ),
-              ImgBuilder(existingPinta: existingPinta, index: index, r: r),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: Icon(Icons.arrow_back, size: r.dp(3)),
+            ),
+            SizedBox(width: r.wp(5)),
+            Text(
+              existingPinta != null ? "¿Qué cambiamos?" : "Piensela pues..",
+              style: TextStyle(
+                letterSpacing: 0,
+                fontWeight: FontWeight.bold,
+                fontSize: r.dp(3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RowWithClothesSliver extends StatefulWidget {
+  const RowWithClothesSliver({
+    super.key,
+    required this.r,
+    required this.images,
+    required this.onImageSelected,
+  });
+  final Responsive r;
+  final Map<String, File?> images;
+  final Function(String, File?) onImageSelected;
+
+  @override
+  State<RowWithClothesSliver> createState() => _RowWithClothesSliverState();
+}
+
+class _RowWithClothesSliverState extends State<RowWithClothesSliver> {
+  String _mapTituloATipo(String title) {
+    switch (title) {
+      case "Gorrito":
+        return "gorro";
+      case "Chaqueta":
+        return "chaqueta";
+      case "Arriba":
+        return "arriba";
+      case "Abajo":
+        return "abajo";
+      case "Tillas":
+        return "tillas";
+      default:
+        return title.toLowerCase();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> dummyClothes = [
+      {
+        "name": "Gorrito",
+        "tipoInterno": "gorro",
+        "img": null,
+        "icon": Symbols.child_hat_rounded,
+      },
+      {
+        "name": "Chaqueta",
+        "tipoInterno": "chaqueta",
+        "img": null,
+        "icon": Symbols.checkroom_rounded,
+      },
+      {
+        "name": "Arriba",
+        "tipoInterno": "arriba",
+        "img": null,
+        "icon": Symbols.apparel_rounded,
+      },
+      {
+        "name": "Abajo",
+        "tipoInterno": "abajo",
+        "img": null,
+        "icon": Symbols.styler_rounded,
+      },
+      {
+        "name": "Tillas",
+        "tipoInterno": "tillas",
+        "img": null,
+        "icon": Symbols.steps_rounded,
+      },
+    ];
+
+    return SliverToBoxAdapter(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(dummyClothes.length, (int index) {
+            final item = dummyClothes[index];
+            final imagen = widget.images[item['tipoInterno']];
+
+            return GestureDetector(
+              onTap: () {
+                _abrirGaleriaKufta(context, dummyClothes[index]['tipoInterno']);
+              },
+              child: Container(
+                width: widget.r.wp(50),
+                height: widget.r.hp(30),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(widget.r.dp(2)),
+                  color: Theme.of(context).colorScheme.primary.withAlpha(50),
+                  border: BoxBorder.all(color: Colors.white60, width: 1.5),
+                ),
+                margin: EdgeInsets.only(
+                  left: index == 0 ? widget.r.wp(5) : widget.r.wp(4),
+                  right: index == dummyClothes.length - 1 ? widget.r.wp(5) : 0,
+                ),
+                child: imagen != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(widget.r.dp(2)),
+                        child: Image.file(
+                          imagen,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      )
+                    : Center(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              dummyClothes[index]['icon'],
+                              size: widget.r.dp(10),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withAlpha(150),
+                            ),
+                            Text(
+                              dummyClothes[index]['name'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withAlpha(150),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Future<List<Prenda>> _obtenerPrendasAsync(String tipo) async {
+    final box = Hive.box('prendasBox');
+
+    return box.values
+        .map((map) => Prenda.fromMap(Map<String, dynamic>.from(map)))
+        .where((p) => p.tipo == tipo)
+        .toList();
+  }
+
+  void _abrirGaleriaKufta(BuildContext context, String tipoVisual) {
+    final tipo = _mapTituloATipo(tipoVisual);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return FutureBuilder<List<Prenda>>(
+          future: _obtenerPrendasAsync(tipo),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final prendas = snapshot.data!;
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.75,
+              maxChildSize: 0.95,
+              minChildSize: 0.5,
+              builder: (_, controller) {
+                return ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withAlpha(100),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(25),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Galería Kufta",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (widget.images[tipo] != null &&
+                              (tipo == "gorro" || tipo == "chaqueta"))
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent.withAlpha(
+                                    200,
+                                  ),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    widget.onImageSelected(tipo, null);
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                icon: const Icon(Icons.remove_circle_outline),
+                                label: const Text(
+                                  "Quitar prenda",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+
+                          Expanded(
+                            child: GridView.builder(
+                              controller: controller,
+                              itemCount: prendas.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                              itemBuilder: (_, index) {
+                                final prenda = prendas[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      widget.onImageSelected(
+                                        tipo,
+                                        prenda.imagen,
+                                      );
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      prenda.imagen,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class SliverBoxWithPinta extends StatefulWidget {
+  final Map<String, File?> images;
+  final Responsive r;
+
+  const SliverBoxWithPinta({super.key, required this.images, required this.r});
+
+  @override
+  State<SliverBoxWithPinta> createState() => _SliverBoxWithPintaState();
+}
+
+class _SliverBoxWithPintaState extends State<SliverBoxWithPinta>
+    with TickerProviderStateMixin {
+  bool expanded = false;
+
+  void toggle() {
+    setState(() {
+      expanded = !expanded;
+    });
+  }
+
+  Widget _buildCloth(String key) {
+    final file = widget.images[key];
+    if (file == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ClipRRect(
+        borderRadius: BorderRadiusGeometry.circular(widget.r.dp(1)),
+        child: Image.file(file, width: widget.r.wp(30), fit: BoxFit.contain),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.r.wp(5),
+          vertical: widget.r.hp(2),
+        ),
+        child: Container(
+          width: widget.r.wp(100),
+          padding: EdgeInsets.symmetric(
+            vertical: widget.r.hp(1.5),
+            horizontal: widget.r.wp(4),
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            color: Theme.of(context).colorScheme.primary.withAlpha(80),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /// 🔘 HEADER (siempre arriba, nunca animado)
+              GestureDetector(
+                onTap: toggle,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Ver pinta",
+                      style: TextStyle(
+                        fontSize: widget.r.dp(2),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    AnimatedRotation(
+                      turns: expanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: const Icon(Icons.keyboard_arrow_down),
+                    ),
+                  ],
+                ),
+              ),
+
+              /// 🔥 SOLO esta parte se anima
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter, // 🔥 clave
+                child: expanded
+                    ? Column(
+                        children: [
+                          SizedBox(height: widget.r.hp(2)),
+                          _buildCloth('gorro'),
+                          _buildCloth('chaqueta'),
+                          _buildCloth('arriba'),
+                          _buildCloth('abajo'),
+                          _buildCloth('tillas'),
+                        ],
+                      )
+                    : const SizedBox(),
+              ),
             ],
           ),
         ),
@@ -61,26 +509,28 @@ class Create extends StatelessWidget {
   }
 }
 
-class ImgBuilder extends StatefulWidget {
-  final Pinta? existingPinta;
-  final int? index;
-  final Responsive r;
-  const ImgBuilder({
+class AboutSliver extends StatefulWidget {
+  const AboutSliver({
     super.key,
-    this.existingPinta,
-    this.index,
     required this.r,
+    required this.images,
+    this.index,
+    this.existingPinta,
   });
+  final Responsive r;
+  final Map<String, File?> images;
+  final int? index;
+  final Pinta? existingPinta;
 
   @override
-  State<ImgBuilder> createState() => _ImgBuilderState();
+  State<AboutSliver> createState() => _AboutSliverState();
 }
 
-class _ImgBuilderState extends State<ImgBuilder> {
-  final Map<String, File?> _images = {};
+class _AboutSliverState extends State<AboutSliver> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _categoriaController = TextEditingController();
+
   List<DateTime> _fechasSeleccionadas = [];
 
   @override
@@ -93,318 +543,272 @@ class _ImgBuilderState extends State<ImgBuilder> {
       _descripcionController.text = p.descripcion ?? "";
       _categoriaController.text = p.categoria ?? "";
       _fechasSeleccionadas = p.fechas ?? [];
-
-      _images["Lo de arriba"] = p.arriba;
-      _images["Lo de abajo"] = p.abajo;
-      _images["Las tillas"] = p.zapatos;
-      if (p.gorro != null) _images["Gorrita"] = p.gorro!;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final r = Responsive.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.hp(2), horizontal: r.wp(5)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPic(r, context, "Gorrita"),
-          _buildPic(r, context, "Lo de arriba"),
-          _buildPic(r, context, "Lo de abajo"),
-          _buildPic(r, context, "Las tillas"),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: r.hp(1)),
-            child: Divider(
-              thickness: 1,
-              color: Theme.of(context).colorScheme.primary.withAlpha(120),
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: widget.r.hp(1),
+          right: widget.r.wp(5),
+          left: widget.r.wp(5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _textForm(widget.r, "* Nombre de la pinta", _nombreController),
+            _textForm(
+              widget.r,
+              "* Algo que decir de la pinta",
+              _descripcionController,
             ),
-          ),
-          Container(
-            width: r.wp(100),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(r.dp(2)),
-              color: Theme.of(context).colorScheme.primary.withAlpha(50),
+            _textForm(
+              widget.r,
+              "* ¿Pa' dónde es la vuelta?",
+              _categoriaController,
             ),
-            child: Column(
-              children: [
-                // GORRO (opcional)
-                if (_images["Gorrita"] != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: r.dp(1)),
-                    child: Image.file(
-                      _images["Gorrita"]!,
-                      height: r.hp(10),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                // ARRIBA
-                if (_images["Lo de arriba"] != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: r.dp(1)),
-                    child: Image.file(
-                      _images["Lo de arriba"]!,
-                      height: r.hp(12),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                // ABAJO
-                if (_images["Lo de abajo"] != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: r.dp(1)),
-                    child: Image.file(
-                      _images["Lo de abajo"]!,
-                      height: r.hp(12),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                // ZAPATOS
-                if (_images["Las tillas"] != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: r.dp(1)),
-                    child: Image.file(
-                      _images["Las tillas"]!,
-                      height: r.hp(10),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(bottom: r.hp(3)),
-            child: Divider(
-              thickness: 1,
-              color: Theme.of(context).colorScheme.primary.withAlpha(120),
-            ),
-          ),
-          _buildForm(r, "Nombre de la pinta", _nombreController),
-          _buildForm(
-            r,
-            "¿Algo que decir de la percha?",
-            _descripcionController,
-          ),
-          _buildForm(r, "¿Pa' dónde es la vuelta?", _categoriaController),
-
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: r.hp(2)),
-            child: Text(
-              "¿Para cuando lo vamos a usar mor? (Opcional)",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.dp(2)),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => _showDatePicker(context),
-            child: Container(
-              width: r.wp(100),
-              padding: EdgeInsets.all(r.dp(1)),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(r.dp(2)),
-                color: Theme.of(context).colorScheme.primary.withAlpha(200),
-                border: Border.all(color: Colors.white24, width: 1.5),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Agregar la fecha",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: r.dp(1.6),
-                    ),
-                  ),
-                  SizedBox(width: r.wp(2)),
-                  Icon(
-                    CupertinoIcons.calendar,
-                    size: r.dp(3),
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_fechasSeleccionadas.isNotEmpty)
             Padding(
-              padding: EdgeInsets.only(top: r.hp(1)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: (() {
-                  final fechasOrdenadas = [..._fechasSeleccionadas]
-                    ..sort((a, b) => a.compareTo(b));
+              padding: EdgeInsets.only(bottom: widget.r.hp(1)),
+              child: ElevatedButton(
+                onPressed: () => _showDatePicker(context),
 
-                  return fechasOrdenadas.map((f) {
-                    final fechaFormateada = DateFormat(
-                      "d 'de' MMMM 'de' y",
-                      "es_ES",
-                    ).format(f);
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_month_rounded,
+                      size: widget.r.dp(2.4),
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.black87
+                          : Colors.white70,
+                    ),
+                    SizedBox(width: widget.r.wp(2)),
+                    Text("Planear la fecha"),
+                  ],
+                ),
+              ),
+            ),
 
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: r.hp(0.5)),
-                      child: Container(
-                        padding: EdgeInsets.all(r.dp(1)),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withAlpha(20),
-                          borderRadius: BorderRadius.circular(r.dp(1.5)),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.primary,
+            if (_fechasSeleccionadas.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: widget.r.hp(1)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: (() {
+                    final fechasOrdenadas = [..._fechasSeleccionadas]
+                      ..sort((a, b) => a.compareTo(b));
+
+                    return fechasOrdenadas.map((f) {
+                      final fechaFormateada = DateFormat(
+                        "d 'de' MMMM 'de' y",
+                        "es_ES",
+                      ).format(f);
+
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: widget.r.hp(0.5)),
+                        child: Container(
+                          padding: EdgeInsets.all(widget.r.dp(1)),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(
+                              widget.r.dp(1.5),
+                            ),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                fechaFormateada,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: widget.r.dp(1.7),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _fechasSeleccionadas.remove(f);
+                                  });
+                                },
+                                child: Icon(
+                                  CupertinoIcons.trash,
+                                  size: widget.r.dp(2.5),
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              fechaFormateada,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                                fontSize: r.dp(1.7),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _fechasSeleccionadas.remove(f);
-                                });
-                              },
-                              child: Icon(
-                                CupertinoIcons.trash,
-                                size: r.dp(2.5),
-                                color: Colors.redAccent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList();
-                })(),
-              ),
-            ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: r.hp(1)),
-            child: Divider(
-              thickness: 1,
-              color: Theme.of(context).colorScheme.primary.withAlpha(120),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: _guardarPinta,
-              child: Container(
-                padding: EdgeInsets.all(r.dp(1)),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(r.dp(2)),
-                  color: Theme.of(context).colorScheme.primary,
-                  border: Border.all(color: Colors.white24, width: 1.5),
+                      );
+                    }).toList();
+                  })(),
                 ),
-                child: Text(
-                  widget.index != null ? "Editar la pinta" : "Subir la pinta",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.surface,
-                    fontSize: r.dp(1.6),
+              ),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _guardarPinta();
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                      foregroundColor: WidgetStatePropertyAll(Colors.white),
+                    ),
+                    child: Text(
+                      widget.index != null
+                          ? "Editar la pinta"
+                          : "Subir la pinta",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void _showCategoryPicker(BuildContext context) {
-    // Filtramos las categorías quitando "Todas"
-    final filtered = categories
+  Padding _textForm(
+    Responsive r,
+    String title,
+    TextEditingController controller,
+  ) {
+    if (title.contains("¿Pa' dónde es la vuelta?")) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: r.hp(2)),
+        child: GestureDetector(
+          onTap: () => _showCategoryPicker(context, r),
+          child: AbsorbPointer(
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: title,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(r.dp(2)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.only(bottom: r.hp(2)),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: title,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(r.dp(2)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCategoryPicker(BuildContext context, Responsive r) {
+    final box = Hive.box('categoriesBox');
+
+    final filtered = box.values
+        .map((c) => Categories.fromMap(Map<String, dynamic>.from(c)))
         .where((c) => c.name != "Todas" && c.name != "Favoritos")
         .toList();
 
-    showCupertinoModalPopup(
+    showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
-        return ClipRRect(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: Container(
-              height: 260,
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(100),
-                border: Border(
-                  top: BorderSide(color: Colors.white.withAlpha(100)),
+        return SizedBox(
+          height: 300,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: CupertinoPicker(
-                      itemExtent: 40,
-                      scrollController: FixedExtentScrollController(
-                        initialItem: filtered.indexWhere(
-                          (c) => c.name == _categoriaController.text,
-                        ),
-                      ),
-                      selectionOverlay: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withAlpha(150),
-                          border: Border(
-                            top: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 1,
-                            ),
-                            bottom: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                      onSelectedItemChanged: (int index) {
-                        setState(() {
-                          _categoriaController.text = filtered[index].name;
-                        });
-                      },
-                      children: filtered
-                          .map(
-                            (c) => Center(
-                              child: Text(
-                                c.name,
-                                style: TextStyle(
-                                  fontSize: widget.r.dp(1.9),
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
+
+              const SizedBox(height: 20),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final category = filtered[index];
+                    final isSelected =
+                        _categoriaController.text == category.name;
+
+                    final isLast = index == filtered.length - 1;
+
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: r.wp(5)),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              category.name,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                  CupertinoButton(
-                    child: Text(
-                      "Cerrar",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                            trailing: isSelected
+                                ? Icon(
+                                    Icons.check_circle,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  )
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _categoriaController.text = category.name;
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+
+                          /// 🔹 Línea separadora (excepto el último)
+                          if (!isLast)
+                            Divider(
+                              height: 1,
+                              thickness: 0.8,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outline.withAlpha(120),
+                            ),
+                        ],
                       ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -420,7 +824,7 @@ class _ImgBuilderState extends State<ImgBuilder> {
         : DateTime(now.year, now.month, now.day);
 
     // Máximo permitido: fin del 2027
-    final fin = DateTime(2027, 12, 31);
+    final fin = DateTime(2030, 12, 31);
 
     DateTime tempDate = minimo;
 
@@ -439,10 +843,7 @@ class _ImgBuilderState extends State<ImgBuilder> {
                   SizedBox(
                     height: 200,
                     child: CupertinoTheme(
-                      data: CupertinoThemeData(
-                        brightness: Brightness
-                            .dark, // Fuerza que los textos sí usen el estilo
-                      ),
+                      data: CupertinoThemeData(brightness: Brightness.dark),
                       child: CupertinoDatePicker(
                         mode: CupertinoDatePickerMode.date,
                         minimumDate: minimo,
@@ -460,7 +861,7 @@ class _ImgBuilderState extends State<ImgBuilder> {
                       "Pintarla pa' esa fecha",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontFamily: "ComicNeue",
+                        fontFamily: "Fredoka",
                         color: Colors.white,
                       ),
                     ),
@@ -477,7 +878,7 @@ class _ImgBuilderState extends State<ImgBuilder> {
                       "Volver",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontFamily: "ComicNeue",
+                        fontFamily: "Fredoka",
                         color: Colors.white,
                       ),
                     ),
@@ -490,126 +891,6 @@ class _ImgBuilderState extends State<ImgBuilder> {
         );
       },
     );
-  }
-
-  Padding _buildForm(
-    Responsive r,
-    String title,
-    TextEditingController? controller,
-  ) {
-    final isCategoryField = title == "¿Pa' dónde es la vuelta?";
-
-    if (isCategoryField) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: GestureDetector(
-          onTap: () => _showCategoryPicker(context),
-          child: AbsorbPointer(
-            child: TextFormField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: title,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(r.dp(2)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: title,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(r.dp(2)),
-          ),
-        ),
-        maxLines: 1,
-      ),
-    );
-  }
-
-  Padding _buildPic(Responsive r, BuildContext context, String title) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: r.hp(2)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.dp(2)),
-          ),
-          GestureDetector(
-            onTap: () async {
-              _abrirGaleriaKufta(context, title);
-            },
-            child: Container(
-              height: r.hp(16),
-              width: r.wp(100),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(r.dp(2)),
-                border: Border.all(color: Colors.white60, width: 1.5),
-                color: Theme.of(context).colorScheme.primary.withAlpha(100),
-              ),
-              child: _images[title] != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(r.dp(2)),
-                      child: Image.file(
-                        _images[title]!,
-                        fit: BoxFit.cover,
-                        width: r.wp(100),
-                        height: r.hp(16),
-                      ),
-                    )
-                  : Icon(
-                      CupertinoIcons.camera_circle_fill,
-                      size: r.dp(6),
-                      color: Colors.white,
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _abrirGaleriaKufta(BuildContext context, String tipo) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return _GaleriaKuftaModal(
-          tipo: _mapTituloATipo(tipo), // convierte "Gorrita" -> "gorro"
-          onPrendaSeleccionada: (File imagen) {
-            setState(() {
-              _images[tipo] = imagen;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  String _mapTituloATipo(String titulo) {
-    switch (titulo) {
-      case "Gorrita":
-        return "gorro";
-      case "Lo de arriba":
-        return "arriba";
-      case "Lo de abajo":
-        return "abajo";
-      case "Las tillas":
-        return "tillas";
-      default:
-        return titulo.toLowerCase();
-    }
   }
 
   void _incrementarUso(File imagen) {
@@ -631,32 +912,33 @@ class _ImgBuilderState extends State<ImgBuilder> {
 
   void _guardarPinta() async {
     // Validar imágenes obligatorias
-    if (_images['Lo de arriba'] == null ||
-        _images['Lo de abajo'] == null ||
-        _images['Las tillas'] == null) {
+    if (widget.images['arriba'] == null ||
+        widget.images['abajo'] == null ||
+        widget.images['tillas'] == null) {
       _mostrarError("Debes completar arriba, abajo y zapatos");
       return;
     }
 
     // Validar campos obligatorios
     if (_nombreController.text.trim().isEmpty ||
-        _categoriaController.text.trim().isEmpty) {
-      _mostrarError(
-        "Debes completar el nombre de la pinta y hacia dónde es la vuelta",
-      );
+        _categoriaController.text.trim().isEmpty ||
+        _descripcionController.text.trim().isEmpty) {
+      _mostrarError("Debes completar todos los campos obligatorios (*)");
       return;
     }
 
-    final arribaFile = _images['Lo de arriba']!;
-    final abajoFile = _images['Lo de abajo']!;
-    final zapatosFile = _images['Las tillas']!;
-    final gorroFile = _images['Gorrita'];
+    final arribaFile = widget.images['arriba']!;
+    final abajoFile = widget.images['abajo']!;
+    final zapatosFile = widget.images['tillas']!;
+    final chaquetaFile = widget.images['chaqueta'];
+    final gorroFile = widget.images['gorro'];
 
     final pinta = Pinta(
       arriba: arribaFile,
       abajo: abajoFile,
       zapatos: zapatosFile,
       gorro: gorroFile,
+      chaqueta: chaquetaFile,
       nombre: _nombreController.text,
       descripcion: _descripcionController.text.isEmpty
           ? null
@@ -667,6 +949,14 @@ class _ImgBuilderState extends State<ImgBuilder> {
       fechas: _fechasSeleccionadas,
     );
 
+    Pinta? pintaAnterior;
+
+    if (widget.index != null) {
+      final boxTemp = Hive.box('pintasBox');
+      final oldMap = Map<String, dynamic>.from(boxTemp.getAt(widget.index!));
+      pintaAnterior = Pinta.fromMap(oldMap);
+    }
+
     final box = await Hive.openBox('pintasBox');
 
     if (widget.index != null) {
@@ -676,144 +966,104 @@ class _ImgBuilderState extends State<ImgBuilder> {
       // CREAR
       await box.add(pinta.toMap());
     }
-    _incrementarUso(arribaFile);
-    _incrementarUso(abajoFile);
-    _incrementarUso(zapatosFile);
-    if (gorroFile != null) _incrementarUso(gorroFile);
 
-    // Tu código actual de notificaciones programadas
-    await mostrarNotificacionSoloUnaVez();
-    if (pinta.fechas != null) {
-      for (final f in pinta.fechas!) {
-        await programarNotificacionPinta(pinta, f);
+    if (widget.index != null && pintaAnterior != null) {
+      _manejarUso(arribaFile, pintaAnterior.arriba);
+      _manejarUso(abajoFile, pintaAnterior.abajo);
+      _manejarUso(zapatosFile, pintaAnterior.zapatos);
+      if (widget.index != null) {
+        // Si antes había gorro y ahora no
+        if (pintaAnterior.gorro != null && gorroFile == null) {
+          _decrementarUso(pintaAnterior.gorro!);
+        }
+
+        if (pintaAnterior.chaqueta != null && chaquetaFile == null) {
+          _decrementarUso(pintaAnterior.chaqueta!);
+        }
       }
+    } else {
+      // Crear nueva pinta
+      _incrementarUso(arribaFile);
+      _incrementarUso(abajoFile);
+      _incrementarUso(zapatosFile);
+      if (gorroFile != null) _incrementarUso(gorroFile);
+      if (chaquetaFile != null) _incrementarUso(chaquetaFile);
     }
 
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (_) => CupertinoAlertDialog(
-        title: Text(
-          widget.index != null ? "Actualizado" : "¡Listo!",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
+      builder: (context) => AlertDialog(
+        title: Text(widget.index != null ? "Actualizado" : "¡Listo!"),
         content: Text(
           widget.index != null
               ? "La pinta ha sido actualizada"
               : "La pinta ha sido guardada",
-          style: TextStyle(fontFamily: "ComicNeue"),
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // cerrar dialog
+              Navigator.pop(context); // volver atrás
             },
-            child: Text("Ok", style: TextStyle(fontFamily: "ComicNeue")),
+            child: const Text("Ok"),
           ),
         ],
       ),
     );
+  }
+
+  void _manejarUso(File nueva, File? anterior) {
+    // Si antes no había
+    if (anterior == null) {
+      _incrementarUso(nueva);
+      return;
+    }
+
+    // Si cambió la prenda
+    if (nueva.path != anterior.path) {
+      _decrementarUso(anterior);
+      _incrementarUso(nueva);
+    }
+  }
+
+  void _decrementarUso(File imagen) {
+    final box = Hive.box('prendasBox');
+    final path = imagen.path;
+
+    for (var key in box.keys) {
+      final map = Map<String, dynamic>.from(box.get(key));
+      final prenda = Prenda.fromMap(map);
+
+      if (prenda.imagen.path == path) {
+        prenda.vecesUsada = prenda.vecesUsada > 0 ? prenda.vecesUsada - 1 : 0;
+        box.put(key, prenda.toMap());
+        break;
+      }
+    }
   }
 
   void _mostrarError(String mensaje) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (_) => CupertinoAlertDialog(
-        title: Text("Error", style: TextStyle(fontFamily: "ComicNeue")),
-        content: Text(mensaje, style: TextStyle(fontFamily: "ComicNeue")),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Ok"),
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GaleriaKuftaModal extends StatelessWidget {
-  final String tipo;
-  final Function(File) onPrendaSeleccionada;
-
-  const _GaleriaKuftaModal({
-    required this.tipo,
-    required this.onPrendaSeleccionada,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    List<Prenda> obtenerPrendasPorTipo(String tipo) {
-      final box = Hive.box('prendasBox');
-      return box.values
-          .map((map) => Prenda.fromMap(Map<String, dynamic>.from(map)))
-          .where((p) => p.tipo == tipo && p.imagen.existsSync())
-          .toList();
-    }
-
-    final prendas = obtenerPrendasPorTipo(tipo);
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      maxChildSize: 0.95,
-      minChildSize: 0.5,
-      builder: (_, controller) {
-        return ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withAlpha(100),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          title: const Text("Error"),
+          content: Text(mensaje),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(Colors.white),
+                backgroundColor: WidgetStatePropertyAll(
+                  Theme.of(context).colorScheme.primary,
+                ),
               ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Galería Kufta",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-
-                  Expanded(
-                    child: GridView.builder(
-                      controller: controller,
-                      itemCount: prendas.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                          ),
-                      itemBuilder: (_, index) {
-                        final prenda = prendas[index];
-                        return GestureDetector(
-                          onTap: () {
-                            onPrendaSeleccionada(prenda.imagen);
-                            Navigator.pop(context);
-                          },
-
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(prenda.imagen, fit: BoxFit.cover),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
+              child: const Text("Ok"),
             ),
-          ),
+          ],
         );
       },
     );

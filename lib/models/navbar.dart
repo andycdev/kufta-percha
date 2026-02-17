@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class NavBarItem {
   final IconData icon;
@@ -6,9 +7,8 @@ class NavBarItem {
 }
 
 List<NavBarItem> bottomNavBarItems = [
-  NavBarItem(icon: CupertinoIcons.house_alt),
-  NavBarItem(icon: CupertinoIcons.scribble),
-  NavBarItem(icon: CupertinoIcons.search),
-  NavBarItem(icon: CupertinoIcons.calendar),
-  NavBarItem(icon: CupertinoIcons.settings),
+  NavBarItem(icon: Icons.home_rounded),
+  NavBarItem(icon: Symbols.dresser_rounded),
+  NavBarItem(icon: Icons.event_rounded),
+  NavBarItem(icon: Icons.settings_rounded),
 ];

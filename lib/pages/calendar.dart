@@ -39,18 +39,26 @@ class _CalendarPageState extends State<CalendarPage> {
 
     final monthNames = List.generate(
       12,
-      (i) => DateFormat.MMMM().format(DateTime(2000, i + 1)),
+      (i) => DateFormat.MMMM('es_CO').format(DateTime(2000, i + 1)),
     );
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.only(left: r.wp(5), right: r.wp(5), top: r.wp(5), bottom: r.hp(10)),
+          padding: EdgeInsets.only(
+            left: r.wp(5),
+            right: r.wp(5),
+            top: r.hp(6),
+            bottom: r.hp(10),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 "Mor planner",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.dp(3)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: r.dp(3),
+                ),
               ),
               GestureDetector(
                 onTap: () => _showMonthPicker(context),
@@ -91,7 +99,9 @@ class _CalendarPageState extends State<CalendarPage> {
                   children: [
                     Divider(
                       thickness: 1,
-                      color: Theme.of(context).colorScheme.primary.withAlpha(120),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withAlpha(120),
                     ),
                     SizedBox(height: r.hp(1)),
                     Text(
@@ -102,16 +112,17 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                     ),
                     SizedBox(height: r.hp(1)),
-        
+
                     ...pintasDelMes.map((p) {
                       // Construimos una lista de objetos: cada entrada es UNA FECHA de UNA PINTA.
                       final fechasExpandida = <Map<String, dynamic>>[];
-        
+
                       for (var p in pintasDelMes) {
                         final fechas =
                             (p["fechas"] as List)
                                 .map(
-                                  (ms) => DateTime.fromMillisecondsSinceEpoch(ms),
+                                  (ms) =>
+                                      DateTime.fromMillisecondsSinceEpoch(ms),
                                 )
                                 .where(
                                   (f) =>
@@ -120,7 +131,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 )
                                 .toList()
                               ..sort((a, b) => a.compareTo(b));
-        
+
                         for (var f in fechas) {
                           fechasExpandida.add({
                             "fecha": f,
@@ -130,22 +141,25 @@ class _CalendarPageState extends State<CalendarPage> {
                           });
                         }
                       }
-        
+
                       // Ordenar por fecha
                       fechasExpandida.sort(
                         (a, b) => a["fecha"].compareTo(b["fecha"]),
                       );
-        
-                      final formatter = DateFormat("d 'de' MMMM 'de' y", "es_ES");
-        
+
+                      final formatter = DateFormat(
+                        "d 'de' MMMM 'de' y",
+                        "es_ES",
+                      );
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: fechasExpandida.map((item) {
                           final fecha = item["fecha"];
-                          final nombre = item["nombre"]; 
+                          final nombre = item["nombre"];
                           final descripcion = item["descripcion"];
                           final imgTop = item["arriba"];
-        
+
                           return Padding(
                             padding: EdgeInsets.only(bottom: r.hp(1)),
                             child: Container(
@@ -163,13 +177,17 @@ class _CalendarPageState extends State<CalendarPage> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           formatter.format(fecha),
                                           style: TextStyle(
                                             fontSize: r.dp(1.6),
-                                            color: Theme.of(context).colorScheme.onSurface.withAlpha(180),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withAlpha(180),
                                           ),
                                         ),
                                         Text(
@@ -177,7 +195,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                           style: TextStyle(
                                             fontSize: r.dp(1.8),
                                             fontWeight: FontWeight.bold,
-                                            height: 1
+                                            height: 1,
                                           ),
                                         ),
                                         SizedBox(height: r.hp(1)),
@@ -185,7 +203,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                           descripcion ?? "(Sin descripción)",
                                           style: TextStyle(
                                             fontSize: r.dp(1.8),
-                                            height: 1
+                                            height: 1,
                                           ),
                                         ),
                                       ],
@@ -193,7 +211,9 @@ class _CalendarPageState extends State<CalendarPage> {
                                   ),
                                   SizedBox(width: r.wp(1)),
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(r.dp(1)),
+                                    borderRadius: BorderRadius.circular(
+                                      r.dp(1),
+                                    ),
                                     child: imgTop != null
                                         ? Image.file(
                                             File(
@@ -228,10 +248,10 @@ class _CalendarPageState extends State<CalendarPage> {
   void _showMonthPicker(BuildContext context) {
     final monthNames = List.generate(
       12,
-      (i) => DateFormat.MMMM().format(DateTime(2000, i + 1)),
+      (i) => DateFormat.MMMM('es_CO').format(DateTime(2000, i + 1)),
     );
 
-    final years = [2025, 2026, 2027];
+    final years = [2026, 2027, 2028, 2029, 2030];
 
     int initialMonthIndex = selectedDate.month - 1;
     int initialYearIndex = years.indexOf(selectedDate.year);
@@ -277,7 +297,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   color: Colors.white,
-                                  fontFamily: "ComicNeue",
+                                  fontFamily: "Fredoka",
                                   shadows: [
                                     Shadow(
                                       blurRadius: 10,
@@ -315,7 +335,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   color: Colors.white,
-                                  fontFamily: "ComicNeue",
+                                  fontFamily: "Fredoka",
                                   shadows: [
                                     Shadow(
                                       blurRadius: 10,
@@ -448,59 +468,201 @@ class _CalendarDay extends StatelessWidget {
         final size = constraints.biggest.shortestSide;
         final baseColor = Theme.of(context).colorScheme.surface;
 
-        return Container(
-          margin: EdgeInsets.all(2),
-          width: size * 0.8,
-          height: size * 0.8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(r.dp(1)),
-            color: isToday ? Theme.of(context).colorScheme.primary : baseColor,
-            boxShadow: isToday
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(76),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.white.withAlpha(204),
-                      offset: Offset(-2, -2),
-                      blurRadius: 4,
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withAlpha(51),
-                      offset: Offset(3, 3),
-                      blurRadius: 6,
-                    ),
-                  ],
-          ),
+        return InkWell(
+          borderRadius: BorderRadius.circular(r.dp(1)),
+          onTap: () {
+            if (isGray) return; // opcional: ignorar días grises
+
+            final int dayNumber = int.tryParse(text) ?? 0;
+            final selectedDate = DateTime(year, month, dayNumber);
+
+            final box = Hive.box('pintasBox');
+            final pintas = box.values.cast<Map>().toList();
+
+            final pintasDelDia = pintas.where((p) {
+              if (p["fechas"] == null) return false;
+
+              final fechas = (p["fechas"] as List)
+                  .map((ms) => DateTime.fromMillisecondsSinceEpoch(ms))
+                  .toList();
+
+              return fechas.any(
+                (f) =>
+                    f.year == selectedDate.year &&
+                    f.month == selectedDate.month &&
+                    f.day == selectedDate.day,
+              );
+            }).toList();
+
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text("Pintas del $dayNumber/$month/$year"),
+                content: pintasDelDia.isEmpty
+                    ? const Text("No hay pintas mor")
+                    : SizedBox(
+                        width: double.maxFinite,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: pintasDelDia.length,
+                          itemBuilder: (context, index) {
+                            final pinta = pintasDelDia[index];
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: r.hp(1)),
+                              child: Container(
+                                padding: EdgeInsets.all(r.dp(1.5)),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                    r.dp(1.8),
+                                  ),
+                                  border: Border.all(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withAlpha(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            pinta["nombre"] ?? "(Sin nombre)",
+                                            style: TextStyle(
+                                              fontSize: r.dp(1.8),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: r.hp(1)),
+                                          Text(
+                                            pinta["descripcion"] ??
+                                                "(Sin descripción)",
+                                            style: TextStyle(
+                                              fontSize: r.dp(1.8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: r.wp(1)),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        r.dp(1),
+                                      ),
+                                      child:
+                                          pinta["arriba"] != null &&
+                                              File(pinta["arriba"]).existsSync()
+                                          ? Image.file(
+                                              File(pinta["arriba"]),
+                                              width: r.dp(10),
+                                              height: r.dp(10),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Icon(
+                                              Icons.image_not_supported,
+                                              size: r.dp(10),
+                                              color: Colors.grey,
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cerrar"),
+                  ),
+                ],
+              ),
+            );
+          },
+
           child: Container(
-            decoration: !isToday
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(r.dp(2.2)),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        baseColor.withAlpha(242),
-                        baseColor.withAlpha(216),
-                      ],
-                    ),
-                  )
-                : null,
-            child: Center(
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                  color: isToday
-                      ? Theme.of(context).colorScheme.surface
-                      : isGray
-                      ? Theme.of(context).colorScheme.onSurface.withAlpha(140)
-                      : Theme.of(context).colorScheme.onSurface,
+            margin: EdgeInsets.all(2),
+            width: size * 0.8,
+            height: size * 0.8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(r.dp(1)),
+              color: isToday
+                  ? Theme.of(context).colorScheme.primary
+                  : baseColor,
+              boxShadow: Theme.of(context).brightness == Brightness.light
+                  ? isToday
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(76),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ]
+                        : [
+                            BoxShadow(
+                              color: Colors.white.withAlpha(204),
+                              offset: Offset(-2, -2),
+                              blurRadius: 4,
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withAlpha(51),
+                              offset: Offset(3, 3),
+                              blurRadius: 6,
+                            ),
+                          ]
+                  : isToday
+                  ? [
+                      BoxShadow(
+                        color: Colors.white.withAlpha(100),
+                        blurRadius: 10,
+                        offset: Offset(0, 0),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.white.withAlpha(20),
+                        offset: Offset(-2, -2),
+                        blurRadius: 4,
+                      ),
+                      BoxShadow(
+                        color: Colors.white.withAlpha(5),
+                        offset: Offset(3, 3),
+                        blurRadius: 6,
+                      ),
+                    ],
+            ),
+            child: Container(
+              decoration: !isToday
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(r.dp(2.2)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          baseColor.withAlpha(242),
+                          baseColor.withAlpha(216),
+                        ],
+                      ),
+                    )
+                  : null,
+              child: Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                    color: isToday
+                        ? Theme.of(context).colorScheme.surface
+                        : isGray
+                        ? Theme.of(context).colorScheme.onSurface.withAlpha(140)
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),

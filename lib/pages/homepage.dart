@@ -8,6 +8,9 @@ import 'package:kufta_percha/models/pinta.dart';
 import 'package:kufta_percha/models/prenda.dart';
 import 'package:kufta_percha/pages/crud/create.dart';
 import 'package:kufta_percha/utils/responsive.dart';
+import 'package:kufta_percha/utils/widgets.dart';
+import 'package:lottie/lottie.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,7 +20,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int selectedCategory = 0;
+  late String selectedCategoryName;
+  bool isSearching = false;
+  String searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategoryName = "Todas";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,27 +36,105 @@ class _HomePageState extends State<HomePage> {
 
     return CustomScrollView(
       slivers: [
-        StartSliver(r: r),
-        ScrollCategoriesSliver(
+        StartSliver(
           r: r,
-          onCategoryChanged: (i) {
-            setState(() => selectedCategory = i);
+          onSearchChanged: (value) {
+            setState(() {
+              searchQuery = value;
+            });
           },
         ),
-        ClothesSliver(r: r, selectedCategory: selectedCategory),
+        ScrollCategoriesSliver(
+          r: r,
+          selectedCategory: selectedCategoryName, // 👈 ESTO FALTABA
+          onChanged: (name) {
+            setState(() {
+              selectedCategoryName = name;
+            });
+          },
+        ),
+
+        SliverToBoxAdapter(
+          child: Container(
+            margin: EdgeInsets.symmetric(
+              vertical: r.hp(2),
+              horizontal: r.wp(5),
+            ),
+            width: r.wp(100),
+            height: 1,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withAlpha(150),
+              borderRadius: BorderRadius.circular(r.dp(1)),
+            ),
+          ),
+        ),
+
+        ClothesSliver(
+          r: r,
+          selectedCategory: selectedCategoryName,
+          searchQuery: searchQuery,
+        ),
       ],
     );
   }
 }
 
-class StartSliver extends StatelessWidget {
-  const StartSliver({super.key, required this.r});
+class StartSliver extends StatefulWidget {
+  const StartSliver({
+    super.key,
+    required this.r,
+    required this.onSearchChanged,
+  });
 
   final Responsive r;
+  final Function(String) onSearchChanged;
+
+  @override
+  State<StartSliver> createState() => _StartSliverState();
+}
+
+class _StartSliverState extends State<StartSliver>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> widthAnimation;
+  late Animation<double> opacityAnimation;
+
+  final TextEditingController controller = TextEditingController();
+
+  bool showTextField = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    widthAnimation = Tween<double>(
+      begin: 48,
+      end: widget.r.wp(90),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    opacityAnimation = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
+    );
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          showTextField = true;
+        });
+      }
+    });
+  }
 
   String getGreeting() {
     final hour = DateTime.now().hour;
-
     if (hour >= 5 && hour < 12) {
       return "Buenos días";
     } else if (hour >= 12 && hour < 18) {
@@ -56,142 +145,189 @@ class StartSliver extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: r.hp(2), horizontal: r.wp(5)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
+        padding: EdgeInsets.only(
+          top: widget.r.hp(6),
+          bottom: widget.r.hp(2),
+          left: widget.r.wp(5),
+          right: widget.r.wp(5),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Quiubo mor",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: r.dp(3),
-                        height: 1.2,
-                      ),
-                    ),
-                    Text(
-                      getGreeting(),
-                      style: TextStyle(
-                        fontSize: r.dp(2),
-                        letterSpacing: 0,
-                        height: 1.2,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withAlpha(170),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  height: r.dp(6),
-                  width: r.dp(6),
+            Expanded(
+              child: FadeTransition(
+                opacity: opacityAnimation,
+                child: _buildHeaderContent(context),
+              ),
+            ),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Container(
+                  width: widthAnimation.value,
+                  height: 48,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors
-                              .white // tema oscuro → blanco
-                        : Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primary.withAlpha(60),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Center(
-                    child: Image.asset(
-                      "assets/img/kufta_icon_reverted.png",
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.white
-                          : null,
-                      colorBlendMode: BlendMode.srcIn, // o BlendMode.srcIn
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ],
+                  child: showTextField
+                      ? _buildTextField(context)
+                      : _buildSearchIcon(),
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildTextField(BuildContext context) {
+    return Row(
+      children: [
+        const SizedBox(width: 12),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            onChanged: widget.onSearchChanged,
+            decoration: const InputDecoration(
+              hintText: "Buscar pinta...",
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            controller.clear();
+            widget.onSearchChanged("");
+            setState(() {
+              showTextField = false;
+            });
+            _controller.reverse();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchIcon() {
+    return IconButton(
+      icon: const Icon(CupertinoIcons.search),
+      onPressed: () {
+        _controller.forward();
+      },
+    );
+  }
+
+  Widget _buildHeaderContent(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Quiubo mor",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: widget.r.dp(3),
+              ),
+            ),
+            Text(
+              getGreeting(),
+              style: TextStyle(
+                fontSize: widget.r.dp(2),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(170),
+              ),
+            ),
+          ],
+        ),
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).push(createRoute(Create()));
+          },
+          icon: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
 }
 
 class ScrollCategoriesSliver extends StatefulWidget {
+  final Responsive r;
+  final String selectedCategory;
+  final Function(String) onChanged;
   const ScrollCategoriesSliver({
     super.key,
     required this.r,
-    required this.onCategoryChanged,
+    required this.selectedCategory,
+    required this.onChanged,
   });
-
-  final Responsive r;
-  final ValueChanged<int> onCategoryChanged;
 
   @override
   State<ScrollCategoriesSliver> createState() => _ScrollCategoriesSliverState();
 }
 
 class _ScrollCategoriesSliverState extends State<ScrollCategoriesSliver> {
-  int selectedIndex = 0;
   @override
   Widget build(BuildContext context) {
-    final catNames = categories.map((c) => c.name).toList();
+    final box = Hive.box('categoriesBox');
+
+    final categoriesName = box.values
+        .map((c) => Categories.fromMap(Map<String, dynamic>.from(c)).name)
+        .toList();
+
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: widget.r.hp(1)),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(catNames.length, (int index) {
-              final bool isActive = index == selectedIndex;
-              return GestureDetector(
-                onTap: () {
-                  setState(() => selectedIndex = index);
-                  widget.onCategoryChanged(index); // <── ENVÍA EL ÍNDICE
-                },
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  curve: Curves.fastEaseInToSlowEaseOut,
-                  margin: EdgeInsets.only(
-                    left: index == 0 ? widget.r.wp(5) : widget.r.wp(2),
-                    right: index == categories.length - 1 ? widget.r.wp(5) : 0,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: widget.r.wp(4),
-                    vertical: widget.r.hp(0.5),
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(widget.r.dp(2.5)),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withAlpha(80),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Text(
-                    catNames[index],
-                    style: TextStyle(
-                      fontSize: widget.r.dp(1.8),
-                      fontWeight: isActive
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isActive ? Colors.white : Colors.black,
-                    ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(categoriesName.length, (int index) {
+            final raw = box.getAt(index);
+            final category = Categories.fromMap(Map<String, dynamic>.from(raw));
+            final isActive = category.name == widget.selectedCategory;
+            return GestureDetector(
+              onTap: () => widget.onChanged(category.name),
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                curve: Curves.fastEaseInToSlowEaseOut,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.primary.withAlpha(60),
+                  borderRadius: BorderRadius.circular(widget.r.dp(2.5)),
+                ),
+                margin: EdgeInsets.only(
+                  left: index == 0 ? widget.r.wp(5) : widget.r.wp(2),
+                  right: index == categoriesName.length - 1
+                      ? widget.r.wp(5)
+                      : 0,
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.r.wp(4),
+                  vertical: widget.r.hp(0.5),
+                ),
+                child: Text(
+                  category.name,
+                  style: TextStyle(
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ),
       ),
     );
@@ -203,10 +339,12 @@ class ClothesSliver extends StatefulWidget {
     super.key,
     required this.r,
     required this.selectedCategory,
+    required this.searchQuery,
   });
 
   final Responsive r;
-  final int selectedCategory;
+  final String selectedCategory;
+  final String searchQuery;
 
   @override
   State<ClothesSliver> createState() => _ClothesSliverState();
@@ -216,174 +354,150 @@ class _ClothesSliverState extends State<ClothesSliver> {
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: widget.r.hp(0.5),
-              horizontal: widget.r.wp(5),
-            ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: widget.r.wp(5)),
+        child: ValueListenableBuilder(
+          valueListenable: Hive.box('pintasBox').listenable(),
+          builder: (context, box, _) {
+            final raw = box.values.toList();
 
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(createRoute(Create()));
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    "Crear mi pinta",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(width: widget.r.wp(2)),
-                  Icon(CupertinoIcons.collections),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(
-              left: widget.r.wp(5),
-              right: widget.r.wp(5),
-              top: widget.r.hp(2),
-              bottom: widget.r.hp(10),
-            ),
-            child: ValueListenableBuilder(
-              valueListenable: Hive.box('pintasBox').listenable(),
-              builder: (context, box, _) {
-                final raw = box.values.toList();
+            final pintas = raw.map((map) {
+              final pintaMap = Map<String, dynamic>.from(map);
+              return Pinta.fromMap(pintaMap);
+            }).toList();
 
-                final pintas = raw.map((map) {
-                  final pintaMap = Map<String, dynamic>.from(map);
-                  return Pinta.fromMap(pintaMap);
-                }).toList();
+            final selected = widget.selectedCategory;
 
-                List<Pinta> filtered = pintas;
+            List<Pinta> filtered = pintas;
 
-                final cat = widget.selectedCategory;
+            if (selected == "Favoritos") {
+              filtered = pintas.where((p) => p.favorito).toList();
+            } else if (selected != "Todas") {
+              filtered = pintas.where((p) => p.categoria == selected).toList();
+            }
 
-                // Categoría 1 = Favoritos
-                if (cat == 1) {
-                  filtered = pintas.where((p) => p.favorito).toList();
-                }
-                // Categorías normales
-                else if (cat > 1) {
-                  final selectedName = categories[cat].name;
-                  filtered = pintas
-                      .where((p) => p.categoria == selectedName)
-                      .toList();
-                }
-
-                if (pintas.isEmpty) {
-                  return Container(
-                    height: widget.r.hp(30),
-                    alignment: Alignment.center,
-                    child: Text(
-                      "Créese una pintica mor, aquí no hay na'",
+            if (filtered.isEmpty) {
+              return Container(
+                height: widget.r.hp(50),
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    Lottie.asset(
+                      "assets/gifts/Loader_cat.json",
+                      fit: BoxFit.contain,
+                      width: widget.r.wp(80),
+                    ),
+                    Text(
+                      "Créese una pintica mor\naquí no hay na'",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: widget.r.dp(2),
                       ),
                     ),
-                  );
-                }
+                  ],
+                ),
+              );
+            }
 
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: filtered.length,
+            if (widget.searchQuery.isNotEmpty) {
+              filtered = filtered.where((p) {
+                return p.nombre.toLowerCase().contains(
+                  widget.searchQuery.toLowerCase(),
+                );
+              }).toList();
+            }
 
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 0.8,
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: filtered.length,
+
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.8,
+              ),
+              itemBuilder: (context, index) {
+                final pinta = filtered[index];
+
+                return GestureDetector(
+                  onLongPress: () => _confirmDelete(context, index),
+                  onTap: () => Navigator.of(context).push(
+                    createRoute(Create(existingPinta: pinta, index: index)),
                   ),
-                  itemBuilder: (context, index) {
-                    final pinta = filtered[index];
 
-                    return GestureDetector(
-                      onLongPress: () => _confirmDelete(context, index),
-                      onTap: () => Navigator.of(context).push(
-                        createRoute(Create(existingPinta: pinta, index: index)),
+                  child: Container(
+                    clipBehavior: Clip.hardEdge,
+                    width: widget.r.wp(50),
+                    height: widget.r.wp(50),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withAlpha(80),
+                        width: 1.5,
                       ),
-
-                      child: Container(
-                        clipBehavior: Clip.hardEdge,
-                        width: widget.r.wp(50),
-                        height: widget.r.wp(50),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withAlpha(80),
-                            width: 1.5,
+                      borderRadius: BorderRadius.circular(widget.r.dp(2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Image.file(
+                            pinta.arriba,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
                           ),
-                          borderRadius: BorderRadius.circular(widget.r.dp(2)),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Image.file(
-                                pinta.arriba,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: widget.r.dp(1),
-                                vertical: widget.r.dp(1),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      pinta.nombre,
-                                      style: TextStyle(
-                                        fontSize: widget.r.dp(1.7),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: widget.r.dp(1),
+                            vertical: widget.r.dp(1),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  pinta.nombre,
+                                  style: TextStyle(
+                                    fontSize: widget.r.dp(1.7),
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  SizedBox(width: widget.r.dp(0.1)),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final box = Hive.box('pintasBox');
-
-                                      pinta.favorito =
-                                          !pinta.favorito; // toggle
-
-                                      await box.putAt(
-                                        index,
-                                        pinta.toMap(),
-                                      ); // guardar cambio
-                                      setState(() {});
-                                    },
-                                    child: Icon(
-                                      pinta.favorito
-                                          ? CupertinoIcons.heart_fill
-                                          : CupertinoIcons.heart,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
+                              SizedBox(width: widget.r.dp(0.1)),
+                              GestureDetector(
+                                onTap: () async {
+                                  final box = Hive.box('pintasBox');
+
+                                  pinta.favorito = !pinta.favorito; // toggle
+
+                                  await box.putAt(
+                                    index,
+                                    pinta.toMap(),
+                                  ); // guardar cambio
+                                  setState(() {});
+                                },
+                                child: Icon(
+                                  pinta.favorito
+                                      ? CupertinoIcons.heart_fill
+                                      : CupertinoIcons.heart,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      ],
+                    ),
+                  ),
                 );
               },
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -406,65 +520,64 @@ class _ClothesSliverState extends State<ClothesSliver> {
   }
 
   void _confirmDelete(BuildContext context, int index) {
-    showCupertinoDialog(
-      barrierColor: Colors.black.withAlpha(150),
+    showDialog(
       context: context,
-      builder: (_) => CupertinoAlertDialog(
-        title: Text(
-          "Eliminar pinta",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
-        content: Text(
-          "¿Estás seguro que quieres eliminar esta pinta?",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: Text("No", style: TextStyle(fontFamily: "ComicNeue")),
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          CupertinoDialogAction(
-            onPressed: () async {
-              final box = Hive.box('pintasBox');
-
-              // 1. Recuperar la pinta ANTES de borrarla
-              final pintaMap = Map<String, dynamic>.from(box.getAt(index));
-              final pinta = Pinta.fromMap(pintaMap);
-
-              // 2. Restar usos a las prendas
-              _decrementarUso(pinta.arriba);
-              _decrementarUso(pinta.abajo);
-              _decrementarUso(pinta.zapatos);
-              if (pinta.gorro != null) _decrementarUso(pinta.gorro!);
-
-              // 3. Ahora sí borramos la pinta
-              await box.deleteAt(index);
-
-              Navigator.pop(context);
-              setState(() {});
-            },
-
-            isDestructiveAction: true,
-            child: Text("Sí", style: TextStyle(fontFamily: "ComicNeue")),
+          title: const Text(
+            "Eliminar pinta",
+            style: TextStyle(fontFamily: "Fredoka"),
           ),
-        ],
-      ),
+          content: const Text(
+            "¿Estás seguro que quieres eliminar esta pinta?",
+            style: TextStyle(fontFamily: "Fredoka"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "No, volver",
+                style: TextStyle(fontFamily: "Fredoka"),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final box = Hive.box('pintasBox');
+
+                // 1. Recuperar antes de borrar
+                final pintaMap = Map<String, dynamic>.from(box.getAt(index));
+                final pinta = Pinta.fromMap(pintaMap);
+
+                // 2. Restar usos
+                _decrementarUso(pinta.arriba);
+                _decrementarUso(pinta.abajo);
+                _decrementarUso(pinta.zapatos);
+                if (pinta.gorro != null) {
+                  _decrementarUso(pinta.gorro!);
+                }
+
+                // 3. Borrar
+                await box.deleteAt(index);
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+
+                setState(() {});
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              child: const Text("Sí, de una"),
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
-Route createRoute(Widget page) {
-  return PageRouteBuilder(
-    transitionDuration: Duration(milliseconds: 600),
-    reverseTransitionDuration: Duration(milliseconds: 600),
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final tween = Tween(
-        begin: const Offset(0, 1),
-        end: Offset.zero,
-      ).chain(CurveTween(curve: Curves.easeOutCubic));
-
-      return SlideTransition(position: animation.drive(tween), child: child);
-    },
-  );
 }

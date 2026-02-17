@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
+import 'package:kufta_percha/pages/settings/categories_page.dart';
 import 'package:kufta_percha/utils/responsive.dart';
+import 'package:kufta_percha/utils/widgets.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -14,7 +16,7 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.only(bottom: r.hp(10)),
+          padding: EdgeInsets.only(bottom: r.hp(12)),
           child: Column(
             children: [
               // HEADER
@@ -40,15 +42,19 @@ class SettingsPage extends StatelessWidget {
                               : Theme.of(context).colorScheme.primary,
                         ),
                         child: Center(
-                          child: Image.asset(
-                            "assets/img/kufta_icon_reverted.png",
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                ? Colors.white
-                                : null,
-                            colorBlendMode:
-                                BlendMode.srcIn, // o BlendMode.srcIn
-                            fit: BoxFit.contain,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              "assets/img/icon_cat.png",
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.white
+                                  : null,
+                              colorBlendMode:
+                                  BlendMode.srcIn, // o BlendMode.srcIn
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),
@@ -66,7 +72,7 @@ class SettingsPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "Versión 1.0.0",
+                            "Versión 1.1.0",
                             style: TextStyle(
                               fontSize: r.dp(1.6),
                               color: Colors.grey.withAlpha(210),
@@ -86,6 +92,13 @@ class SettingsPage extends StatelessWidget {
                 title: "Cuenta",
                 items: [
                   SettingsItem(
+                    icon: Icons.category,
+                    text: "Categorias",
+                    onTap: () {
+                      Navigator.of(context).push(createRoute(CategoriesPage()));
+                    },
+                  ),
+                  SettingsItem(
                     icon: CupertinoIcons.square_arrow_right,
                     text: "Chao mor",
                     onTap: () => _salirApp(context),
@@ -98,12 +111,12 @@ class SettingsPage extends StatelessWidget {
                   SettingsItem(
                     icon: CupertinoIcons.paintbrush,
                     text: "Trajecito de la App",
-                    onTap: () => _mostrarCambiarColor(context),
+                    onTap: () => _mostrarCambiarColor(context, r),
                   ),
                   SettingsItem(
                     icon: CupertinoIcons.brightness,
                     text: "¿Muy brillante?",
-                    onTap: () => _mostrarCambiarTema(context),
+                    onTap: () => _mostrarCambiarTema(context, r),
                   ),
                 ],
               ),
@@ -125,6 +138,11 @@ class SettingsPage extends StatelessWidget {
                     text: "Te Ayudamos Mor",
                     onTap: () => _mostrarAyudaMor(context),
                   ),
+                  SettingsItem(
+                    icon: CupertinoIcons.info_circle,
+                    text: "Version 1.1.0",
+                    onTap: () => _mostrarVersion(context),
+                  ),
                 ],
               ),
             ],
@@ -135,162 +153,181 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _salirApp(BuildContext context) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (_) => CupertinoAlertDialog(
-        title: Text("¿Te vas mor?", style: TextStyle(fontFamily: "ComicNeue")),
-        content: Text(
-          "Cerramos la app ya mismo.",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: Text("Cancelar", style: TextStyle(fontFamily: "ComicNeue")),
-            onPressed: () => Navigator.pop(context),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            child: Text("Chao mor", style: TextStyle(fontFamily: "ComicNeue")),
-            onPressed: () {
-              Navigator.pop(context); // cierra el diálogo
-              Future.delayed(Duration(milliseconds: 200), () {
-                // acá se cierra la app
-                SystemNavigator.pop();
-              });
-            },
-          ),
-        ],
-      ),
+      builder: (_) {
+        return AlertDialog(
+          title: Text("¿Te vas mor?"),
+          content: Text("Cerramos la app ya mismo"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Future.delayed(Duration(milliseconds: 200), () {
+                  SystemNavigator.pop();
+                });
+              },
+              style: ButtonStyle(
+                foregroundColor: WidgetStatePropertyAll(
+                  Theme.of(context).colorScheme.surface,
+                ),
+                backgroundColor: WidgetStatePropertyAll(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              child: Text("Chao mor"),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  void _mostrarCambiarColor(BuildContext context) {
-    showCupertinoModalPopup(
+  void _mostrarCambiarColor(BuildContext context, Responsive r) {
+    showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
-        return CupertinoActionSheet(
-          title: Text(
-            "Trajecito de la App",
-            style: TextStyle(fontFamily: "ComicNeue"),
-          ),
-          message: Text(
-            "Escoge el color que te cuadre, mor.",
-            style: TextStyle(fontFamily: "ComicNeue"),
-          ),
-          actions: [
-            _colorOption(context, Color(0xff057a7b), "Principal"),
-            _colorOption(context, Color(0xff9a0525), "Rojo carmesí"),
-            _colorOption(context, const Color(0xFF0A4FB7), "Azul rey"),
-            _colorOption(context, const Color(0xFFC10ECD), "Fucsia"),
-            _colorOption(context, const Color(0xFFDB9C08), "Mostaza"),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Volver", style: TextStyle(fontFamily: "ComicNeue")),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Trajecito de la App",
+                style: TextStyle(
+                  fontSize: r.dp(2),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text("Escoge el color que te cuadre, mor"),
+              SizedBox(height: 16),
+              _colorOptionMaterial(context, Color(0xff057a7b), "Principal"),
+              _colorOptionMaterial(context, Color(0xff9a0525), "Rojo carmesí"),
+              _colorOptionMaterial(context, Color(0xFF0A4FB7), "Azul rey"),
+              _colorOptionMaterial(context, Color(0xFFC10ECD), "Fucsia"),
+              _colorOptionMaterial(context, Color(0xFFDB9C08), "Mostaza"),
+              SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "Volver",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  CupertinoActionSheetAction _colorOption(
-    BuildContext context,
-    Color color,
-    String name,
-  ) {
-    return CupertinoActionSheetAction(
-      onPressed: () {
-        Hive.box('settingsBox').put('primaryColor', color.value);
+  Widget _colorOptionMaterial(BuildContext context, Color color, String name) {
+    return ListTile(
+      onTap: () {
+        Hive.box('userSettingsBox').put('primaryColor', color.value);
         Navigator.pop(context);
       },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          SizedBox(width: 10),
-          Text(name, style: TextStyle(fontSize: 14)),
-        ],
+      leading: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
+      title: Text(name),
     );
   }
 
-  void _mostrarCambiarTema(BuildContext context) {
-    showCupertinoModalPopup(
+  void _mostrarCambiarTema(BuildContext context, Responsive r) {
+    showModalBottomSheet(
       context: context,
-      builder: (_) => CupertinoActionSheet(
-        title: Text(
-          "Cambiemos la vuelta",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
-        message: Text(
-          "Escoge cómo quieres ver el mundo, mor.",
-          style: TextStyle(fontFamily: "ComicNeue"),
-        ),
-        actions: [
-          _temaAction(
-            context,
-            "Del cel",
-            0,
-            CupertinoIcons.device_phone_portrait,
-          ),
-          _temaAction(context, "Claro", 1, CupertinoIcons.sun_max),
-          _temaAction(context, "Oscuro", 2, CupertinoIcons.moon),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: Text("Volver", style: TextStyle(fontFamily: "ComicNeue")),
-        ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Cambiemos la vuelta",
+                style: TextStyle(
+                  fontSize: r.dp(2),
+
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text("Escoge cómo quieres ver el mundo, mor"),
+              SizedBox(height: 16),
+              _temaActionMaterial(context, "Del cel", 0, Icons.phone_iphone, r),
+              _temaActionMaterial(context, "Claro", 1, Icons.wb_sunny, r),
+              _temaActionMaterial(context, "Oscuro", 2, Icons.nights_stay, r),
+              SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "Volver",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  CupertinoActionSheetAction _temaAction(
+  Widget _temaActionMaterial(
     BuildContext context,
     String label,
     int mode,
     IconData icon,
+    Responsive r,
   ) {
-    return CupertinoActionSheetAction(
-      onPressed: () {
-        Hive.box('settingsBox').put('themeMode', mode);
+    return ListTile(
+      onTap: () {
+        Hive.box('userSettingsBox').put('themeMode', mode);
         Navigator.pop(context);
       },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon),
-          SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 16)),
-        ],
-      ),
+      leading: Icon(icon, size: r.dp(2.5)),
+      title: Text(label),
     );
   }
 
   void _mostrarInfoApp(BuildContext context) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             "Cuidamos tu Info",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontFamily: "ComicNeue",
+              fontFamily: "Fredoka",
             ),
           ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 10),
+          content: SingleChildScrollView(
             child: RichText(
               textAlign: TextAlign.justify,
               text: TextSpan(
                 style: TextStyle(
                   fontSize: 15,
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontFamily: "ComicNeue",
+                  fontFamily: "Fredoka",
                 ),
                 children: const [
                   TextSpan(
@@ -330,12 +367,11 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
+            TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 "Listo mor",
-                style: TextStyle(fontFamily: "ComicNeue"),
+                style: TextStyle(fontFamily: "Fredoka"),
               ),
             ),
           ],
@@ -345,26 +381,28 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _mostrarAcuerdito(BuildContext context) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             "Acuerdito",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontFamily: "ComicNeue",
+              fontFamily: "Fredoka",
             ),
           ),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 10),
+          content: SingleChildScrollView(
             child: RichText(
               textAlign: TextAlign.justify,
               text: TextSpan(
                 style: TextStyle(
                   fontSize: 15,
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontFamily: "ComicNeue",
+                  fontFamily: "Fredoka",
                 ),
                 children: const [
                   TextSpan(
@@ -428,12 +466,11 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
+            TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 "Todo claro",
-                style: TextStyle(fontFamily: "ComicNeue"),
+                style: TextStyle(fontFamily: "Fredoka"),
               ),
             ),
           ],
@@ -443,16 +480,18 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _mostrarAyudaMor(BuildContext context) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             "Te Ayudamos Mor",
             style: TextStyle(
               fontWeight: FontWeight.bold,
-
-              fontFamily: "ComicNeue",
+              fontFamily: "Fredoka",
             ),
           ),
           content: const Padding(
@@ -465,19 +504,64 @@ class SettingsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 height: 1.3,
-                fontFamily: "ComicNeue",
+                fontFamily: "Fredoka",
               ),
               textAlign: TextAlign.center,
             ),
           ),
           actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: Text(
-                "Listo mor",
-                style: TextStyle(fontFamily: "ComicNeue"),
-              ),
+            TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "Listo mor",
+                style: TextStyle(fontFamily: "Fredoka"),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _mostrarVersion(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            "Versión 1.1.0",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontFamily: "Fredoka",
+            ),
+          ),
+          content: const Padding(
+            padding: EdgeInsets.only(top: 10),
+            child: Text(
+              "Novedades en esta versión:\n\n"
+              "• Creador de categorías.\n"
+              "• Buscador animado más fluido.\n"
+              "• Botón \"Ver pinta\" expandible con animación suave.\n"
+              "• Mejoras visuales y ajustes de interfaz.\n"
+              "• Optimización en la carga y subida de prendas.",
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.35,
+                fontFamily: "Fredoka",
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "Listo mor",
+                style: TextStyle(fontFamily: "Fredoka"),
+              ),
             ),
           ],
         );
